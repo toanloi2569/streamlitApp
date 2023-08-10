@@ -11,6 +11,7 @@ dict_of_intents = {
     "get_project_stages": "Hỏi về tình trạng của dự án",
     "get_project_milestones": "Hỏi về milestones (những cột mốc, thời điểm quan trọng) của dự án",
     "get_project_activities": "Hỏi về các hoạt động (activity) của dự án",
+    "other": "Các câu hỏi khác không nằm trong các intent trên"
 }
 dict_of_entities = {
     "project_name": "Tên của dự án",
@@ -49,7 +50,12 @@ class IntentDetector:
                     {"role": "user", "content": user_prompt}
                     ])
         result =  json.loads(response.choices[0].message.content)
-        print(result)
-        return result["intents"], result["entities"]
+        intents = []
+        entities = []
+        if "intents" in result:
+            intents = result["intents"]
+        if "entities" in result:
+            entities = result["entities"]
+        return intents, entities
 
 
