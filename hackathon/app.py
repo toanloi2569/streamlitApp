@@ -3,6 +3,7 @@ import json
 import openai
 import streamlit as st
 import tiktoken
+from openai import InvalidRequestError
 
 from config import config
 from services.intent_detection import IntentDetector
@@ -25,8 +26,8 @@ def preprocess(user_prompt):
         "query_results": ["danh sách các kết quả truy vấn"]
     }}
     Bạn hãy trả lời câu hỏi của người dùng dựa trên các kết quả truy vấn được lưu trữ trong biến query_results.
-    Nếu dữ liệu có cấu trúc, hãy thể hiện dưới dạng bảng.
-    Nếu dữ liệu có project_name, hãy thêm thông tin project_name vào câu trả lời.
+    Nếu dữ liệu có cấu trúc, hãy hiển thị dạng numbering list.
+    Chỉ cần trả lời đúng câu hỏi, không cần giải thích.
     
     {question}
     """
@@ -38,22 +39,24 @@ def preprocess(user_prompt):
 
     query_results = []
     intent_func_mapper = IntentFuncMapper()
+
+    if len(intents) == 1 and intents[0] == 'other':
+        return user_prompt
+
     for intent in intents:
         func = intent_func_mapper.get_func(intent)
         query_result = func(entities)
         query_results.append(query_result)
 
     print('query_results: ', query_results)
-
     query_results_enriched = json.dumps({
         "text": user_prompt,
         "intents": intents,
         "entities": entities,
         "query_results": str(query_results)
-    })
+    }, ensure_ascii=False)
 
     processed_prompt = nlg_prompt_template.format(question=query_results_enriched)
-    print('processed_prompt: ', processed_prompt)
     return processed_prompt
 
 
@@ -73,28 +76,39 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+
 if prompt := st.chat_input("Tôi có thể giúp gì cho bạn?"):
-    original_prompt = prompt
-    prompt = preprocess(prompt)
     with st.chat_message("user"):
-        st.markdown(original_prompt)
+        st.markdown(prompt)
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-        messages = [
-            {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages]
-        while num_tokens_from_string(json.dumps(messages), 'cl100k_base') > 500:
-            messages.pop(0)
-        messages.append({"role": "user", "content": prompt})
-        for response in openai.ChatCompletion.create(
-            model=st.session_state["openai_model"],
-            messages=messages,
-            stream=True,
-        ):
-            full_response += response.choices[0].delta.get("content", "")
-            message_placeholder.markdown(full_response + "▌")
-        message_placeholder.markdown(full_response)
+
+        try:
+            original_prompt = prompt
+            prompt = preprocess(prompt)
+            messages = [
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ]
+            messages.append({"role": "user", "content": prompt})
+            while num_tokens_from_string(json.dumps(messages), 'cl100k_base') > 500 and len(messages) > 1:
+                messages.pop(0)
+
+            for response in openai.ChatCompletion.create(
+                model=st.session_state["openai_model"],
+                messages=messages,
+                stream=True,
+            ):
+                full_response += response.choices[0].delta.get("content", "")
+                message_placeholder.markdown(full_response + "▌")
+            message_placeholder.markdown(full_response)
+
+        except InvalidRequestError as e:
+            st.error(f"OpenAI API error: {e}")
+        except Exception as e:
+            st.error(f"Unexpected error: {e}")
+
     st.session_state.messages.append({"role": "user", "content": original_prompt})
     st.session_state.messages.append({"role": "assistant", "content": full_response})
