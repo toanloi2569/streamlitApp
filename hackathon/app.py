@@ -41,6 +41,7 @@ set_page_title_and_icon()
 openai.api_key = config.OPENAI_API_KEY
 max_message_stack_size = 8
 
+table_data = [1]
 
 def preprocess(user_prompt):
     nlg_prompt_template = """
@@ -68,7 +69,7 @@ def preprocess(user_prompt):
         func = intent_func_mapper.get_func(intent)
         query_result = func(entities)
         query_results.append(query_result)
-        
+        print(query_result)
 
     query_results_enriched = json.dumps({
         "text": user_prompt,
@@ -76,7 +77,7 @@ def preprocess(user_prompt):
         "entities": entities,
         "query_results": str(query_results)
     })
-
+    table_data = query_results[0]
     processed_prompt = nlg_prompt_template.format(question=query_results_enriched)
     return processed_prompt
 
@@ -111,6 +112,28 @@ if "messages" not in st.session_state:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+import pandas as pd
+from datetime import datetime
+
+data = {
+    'subject': ['Bot FE-CS không có file thiết kế kịch bản'],
+    'startDate': [datetime(2023, 7, 26)],
+    'description': ['<p>Dự án đã hoàn thành từ lâu. PM Fsoft/BA là Hội đã nghỉ. Trải qua nhiều lượt BA/Bot builder maintain. Không có file thiết kế kịch bản</p>'],
+    'rootCause': [''],
+    'dueDate': [datetime(2023, 8, 3)],
+    'correctiveAction': ['<ul><li><p>Làm tài liệu kịch bản bot</p></li></ul>'],
+    'preventiveAction': [''],
+    'criticalLevel': ['High'],
+    'status': ['Solving'],
+    'closedDate': [None],
+}
+
+columns = [
+    'subject', 'startDate', 'description', 'rootCause', 'dueDate',
+    'correctiveAction', 'preventiveAction', 'criticalLevel', 'status', 'closedDate'
+]
+
+df = pd.DataFrame(data, columns=columns)
 
 if prompt := st.chat_input("Tôi có thể giúp gì cho bạn?"):
     original_prompt = prompt
@@ -137,3 +160,6 @@ if prompt := st.chat_input("Tôi có thể giúp gì cho bạn?"):
         message_placeholder.markdown(full_response)
     st.session_state.messages.append({"role": "user", "content": original_prompt})
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+if len(table_data) > 0:
+    edited_df = st.data_editor(df) # 👈 this is a widget
