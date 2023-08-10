@@ -2,8 +2,9 @@ import json
 
 import openai
 import streamlit as st
-from config import config
+import tiktoken
 
+from config import config
 from services.intent_detection import IntentDetector
 from services.intent_func_mapper import IntentFuncMapper
 
@@ -38,6 +39,7 @@ def set_page_title_and_icon():
 set_page_title_and_icon()
 
 openai.api_key = config.OPENAI_API_KEY
+max_message_stack_size = 8
 
 
 def preprocess(user_prompt):
@@ -51,6 +53,8 @@ def preprocess(user_prompt):
         "query_results": ["danh sách các kết quả truy vấn"]
     }}
     Bạn hãy trả lời câu hỏi của người dùng dựa trên các kết quả truy vấn được lưu trữ trong biến query_results.
+    Nếu dữ liệu có cấu trúc, hãy thể hiện dưới dạng bảng.
+    Nếu dữ liệu có project_name, hãy thêm thông tin project_name vào câu trả lời.
     
     {question}
     """
@@ -62,7 +66,6 @@ def preprocess(user_prompt):
     intent_func_mapper = IntentFuncMapper()
     for intent in intents:
         func = intent_func_mapper.get_func(intent)
-        print(func)
         query_result = func(entities)
         query_results.append(query_result)
         
@@ -76,6 +79,12 @@ def preprocess(user_prompt):
 
     processed_prompt = nlg_prompt_template.format(question=query_results_enriched)
     return processed_prompt
+
+def num_tokens_from_string(string: str, encoding_name: str) -> int:
+    encoding = tiktoken.get_encoding(encoding_name)
+    num_tokens = len(encoding.encode(string))
+    return num_tokens
+
 
 with open("ui/sidebar.md", "r") as sidebar_file:
     sidebar_content = sidebar_file.read()
@@ -91,6 +100,7 @@ if st.button("Reset Chat"):
     st.session_state["messages"] = INITIAL_MESSAGE
 
 st.write(styles_content, unsafe_allow_html=True)
+
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
@@ -111,7 +121,11 @@ if prompt := st.chat_input("Tôi có thể giúp gì cho bạn?"):
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-        messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+        messages = [
+            {"role": m["role"], "content": m["content"]}
+            for m in st.session_state.messages]
+        while num_tokens_from_string(json.dumps(messages), 'cl100k_base') > 500:
+            messages.pop(0)
         messages.append({"role": "user", "content": prompt})
         for response in openai.ChatCompletion.create(
             model=st.session_state["openai_model"],

@@ -8,9 +8,11 @@ from config import config
 openai.api_key = config.OPENAI_API_KEY
 
 dict_of_intents = {
-    "get_project_state": "Hỏi về tình trạng của dự án",
-    "get_project_milestone": "Hỏi về milestone (những cột mốc, thời điểm quan trọng) của dự án",
-    "get_project_activity": "Hỏi về các hoạt động (activity) của dự án",
+    "get_project_stages": "Hỏi về tình trạng của dự án",
+    "get_project_milestones": "Hỏi về milestones (những cột mốc, thời điểm quan trọng) của dự án",
+    "get_project_activities": "Hỏi về các hoạt động (activity) của dự án",
+    "get_project_issues": "Hỏi về các vấn đề (issue) của dự án",
+    "get_project_risks": "Hỏi về các rủi ro (risk) của dự án",
     "other": "Các câu hỏi khác không nằm trong các intent trên"
 }
 dict_of_entities = {
@@ -38,7 +40,6 @@ def create_bot_prompt():
 bot_prompt = create_bot_prompt()
 
 
-
 class IntentDetector:
     def __init__(self):
         pass
@@ -47,10 +48,11 @@ class IntentDetector:
         user_prompt = f"Câu hỏi: {user_input}"
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": bot_prompt},
-                    {"role": "user", "content": user_prompt}
-                    ])
-        result =  json.loads(response.choices[0].message.content)
+            messages=[
+                {"role": "system", "content": bot_prompt},
+                {"role": "user", "content": user_prompt}
+            ])
+        result = json.loads(response.choices[0].message.content)
         intents = []
         entities = []
         if "intents" in result:
