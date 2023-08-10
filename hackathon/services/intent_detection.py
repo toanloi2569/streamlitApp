@@ -11,6 +11,8 @@ dict_of_intents = {
     "get_project_stages": "Hỏi về tình trạng của dự án",
     "get_project_milestones": "Hỏi về milestones (những cột mốc, thời điểm quan trọng) của dự án",
     "get_project_activities": "Hỏi về các hoạt động (activity) của dự án",
+    "get_project_issues": "Hỏi về các vấn đề (issue) của dự án",
+    "get_project_risks": "Hỏi về các rủi ro (risk) của dự án",
     "other": "Các câu hỏi khác không nằm trong các intent trên"
 }
 dict_of_entities = {
@@ -46,10 +48,11 @@ class IntentDetector:
         user_prompt = f"Câu hỏi: {user_input}"
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": bot_prompt},
-                    {"role": "user", "content": user_prompt}
-                    ])
-        result =  json.loads(response.choices[0].message.content)
+            messages=[
+                {"role": "system", "content": bot_prompt},
+                {"role": "user", "content": user_prompt}
+            ])
+        result = json.loads(response.choices[0].message.content)
         intents = []
         entities = []
         if "intents" in result:
