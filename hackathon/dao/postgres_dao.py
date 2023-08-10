@@ -29,7 +29,7 @@ class ProjectDAO:
 
     def get_stage_of_project(self, project_name):
         sql = (
-            f"SELECT state FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"
+            f"SELECT stage FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"
         )
         self.cursor.execute(sql)
         return self.cursor.fetchall()
@@ -87,8 +87,8 @@ def get_stored_entities():
         return stored_entities
 
     stored_entities = {
-        'project': project_dao.get_all_project_name(),
-        'customer_organization': customer_organization_dao.get_all_customer_organization_names()
+        'project_name': project_dao.get_all_project_name(),
+        'organization': customer_organization_dao.get_all_customer_organization_names()
     }
     return stored_entities
 

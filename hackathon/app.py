@@ -5,10 +5,11 @@ import streamlit as st
 
 from services.intent_detection import IntentDetector
 from services.intent_func_mapper import IntentFuncMapper
+from config import config
 
 st.title("FPT SmartCloud Assistant")
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+openai.api_key = config.OPENAI_API_KEY
 
 
 def preprocess(user_prompt):
@@ -35,7 +36,6 @@ def preprocess(user_prompt):
     intent_func_mapper = IntentFuncMapper()
     for intent in intents:
         func = intent_func_mapper.get_func(intent)
-        print(func)
         query_result = func(entities)
         query_results.append(query_result)
 

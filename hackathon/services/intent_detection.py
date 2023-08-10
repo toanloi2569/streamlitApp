@@ -8,9 +8,9 @@ from config import config
 openai.api_key = config.OPENAI_API_KEY
 
 dict_of_intents = {
-    "get_project_state": "Hỏi về tình trạng của dự án",
+    "get_project_stages": "Hỏi về tình trạng của dự án",
     "get_project_milestones": "Hỏi về milestones (những cột mốc, thời điểm quan trọng) của dự án",
-    "get_project_activity": "Hỏi về các hoạt động (activity) của dự án",
+    "get_project_activities": "Hỏi về các hoạt động (activity) của dự án",
 }
 dict_of_entities = {
     "project_name": "Tên của dự án",
@@ -19,7 +19,7 @@ dict_of_entities = {
 }
 
 answer_prompt = """Hãy đưa ra intent và entity trong câu hỏi của người dùng (trong câu hỏi sẽ có trường hợp có nhiều 
-hơn 1 intent) , câu trả lời chỉ cần ngắn gọn dưới dạng như sau : {"intents": ["intent1", "intent2"], "entity": {
+hơn 1 intent) , câu trả lời chỉ cần ngắn gọn dưới dạng như sau : {"intents": ["intent1", "intent2"], "entities": {
 "time":  ["time1", "time2"], "project_name": ["name1", "name2"]}}"""
 
 
@@ -35,7 +35,6 @@ def create_bot_prompt():
 
 
 bot_prompt = create_bot_prompt()
-
 
 
 class IntentDetector:
