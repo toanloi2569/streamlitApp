@@ -2,13 +2,15 @@ import json
 
 import openai
 import streamlit as st
+from config import config
 
 from services.intent_detection import IntentDetector
 from services.intent_func_mapper import IntentFuncMapper
 
 st.title("FPT SmartCloud Assistant")
 
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+openai.api_key = config.OPENAI_API_KEY
 
 
 def preprocess(user_prompt):
@@ -66,22 +68,21 @@ for message in st.session_state.messages:
 if prompt := st.chat_input("Tôi có thể giúp gì cho bạn?"):
     original_prompt = prompt
     prompt = preprocess(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(original_prompt)
 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
+        messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+        messages.append({"role": "user", "content": prompt})
         for response in openai.ChatCompletion.create(
             model=st.session_state["openai_model"],
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
+            messages=messages,
             stream=True,
         ):
             full_response += response.choices[0].delta.get("content", "")
             message_placeholder.markdown(full_response + "▌")
         message_placeholder.markdown(full_response)
+    st.session_state.messages.append({"role": "user", "content": original_prompt})
     st.session_state.messages.append({"role": "assistant", "content": full_response})
