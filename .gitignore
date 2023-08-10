@@ -1,0 +1,3 @@
+hackathon/.env
+.streamlit/secrets.toml
+hackathon/database.ini
