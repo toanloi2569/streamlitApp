@@ -25,17 +25,22 @@ class ProjectDAO:
         self.cursor.execute(sql)
         result = self.cursor.fetchall()
         result = list(map(lambda x: x[0], result))
-        return result
+        return {
+            'columns': ['stage'],
+            'result': result
+        }
 
     def get_stage_of_project(self, project_name):
         sql = (
             f"SELECT stage FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"
         )
-        print(sql)
         self.cursor.execute(sql)
         result = self.cursor.fetchall()
         result = list(map(lambda x: x[0], result))
-        return result
+        return {
+            'columns': ['stage'],
+            'result': result
+        }
 
 
 class CustomerOrganizationDAO:
@@ -63,7 +68,11 @@ class MilestoneDAO:
             f"SELECT \"milestoneDate\", subject, status, description FROM {config.SCHEMA}.milestones;"
         )
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
     def get_all_milestones_of_project(self, project_name):
         print(project_name)
@@ -74,7 +83,11 @@ class MilestoneDAO:
             f"  AND LOWER(P.name) like '{project_name.lower()}';"
         )
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
 
 class IssueDAO:
@@ -91,10 +104,13 @@ class IssueDAO:
             f"  AND (i.\"updatedAt\" >= NOW() - INTERVAL '1 month') "
         )
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
     def get_all_issues_of_project(self, project_name):
-        print(project_name)
         sql = (
             f"SELECT "
             f"  i.\"dueDate\", "
@@ -114,7 +130,11 @@ class IssueDAO:
             f"  AND LOWER(p.name) like '{project_name.lower()}';"
         )
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
 
 class RiskDAO:
@@ -132,7 +152,11 @@ class RiskDAO:
         )
         print(sql)
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
     def get_all_risks_of_project(self, project_name):
         print(project_name)
@@ -154,9 +178,12 @@ class RiskDAO:
             f"  AND (i.status = 'Open' OR i.status = 'Solving') "
             f"  AND LOWER(p.name) like '{project_name.lower()}';"
         )
-        print(sql)
         self.cursor.execute(sql)
-        return self.cursor.fetchall()
+        columns = [desc[0] for desc in self.cursor.description]
+        return {
+            'columns': columns,
+            'result': self.cursor.fetchall()
+        }
 
 
 def get_stored_entities():
