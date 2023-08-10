@@ -7,8 +7,35 @@ from config import config
 from services.intent_detection import IntentDetector
 from services.intent_func_mapper import IntentFuncMapper
 
-st.title("FPT SmartCloud Assistant")
 
+INITIAL_MESSAGE = [
+    {"role": "user", "content": "Xin chào !"},
+    {
+        "role": "assistant",
+        "content": "Chào bạn, mình là trợ lý ảo của FPT SmartCloud. Bạn có thể hỏi mình về các dự án đang triển khai của FPT SmartCloud.",
+    },
+]
+
+
+def set_page_title_and_icon():
+    st.markdown("""
+        <style>
+            .big-font {
+                font-size:50px !important;
+                font-weight: bold; /* In đậm */
+                color: black;
+            }
+            .caption {
+                font-size:15px !important;
+            }
+        </style>
+        """, 
+        unsafe_allow_html=True)
+
+    st.markdown('<p class="big-font">Carbon Assistant 💎</p>', unsafe_allow_html=True)
+
+# Call the function to set the title and icon
+set_page_title_and_icon()
 
 openai.api_key = config.OPENAI_API_KEY
 
@@ -30,8 +57,6 @@ def preprocess(user_prompt):
 
     intent_detector = IntentDetector()
     intents, entities = intent_detector.detect(user_prompt)
-    print('intents: ', intents)
-    print('entities: ', entities)
 
     query_results = []
     intent_func_mapper = IntentFuncMapper()
@@ -40,8 +65,7 @@ def preprocess(user_prompt):
         print(func)
         query_result = func(entities)
         query_results.append(query_result)
-
-    print('query_results: ', query_results)
+        
 
     query_results_enriched = json.dumps({
         "text": user_prompt,
@@ -51,15 +75,28 @@ def preprocess(user_prompt):
     })
 
     processed_prompt = nlg_prompt_template.format(question=query_results_enriched)
-    print('processed_prompt: ', processed_prompt)
     return processed_prompt
 
+with open("ui/sidebar.md", "r") as sidebar_file:
+    sidebar_content = sidebar_file.read()
+with open("ui/styles.md", "r") as styles_file:
+    styles_content = styles_file.read()
+
+
+st.sidebar.markdown(sidebar_content)
+
+if st.button("Reset Chat"):
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.session_state["messages"] = INITIAL_MESSAGE
+
+st.write(styles_content, unsafe_allow_html=True)
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = INITIAL_MESSAGE
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
