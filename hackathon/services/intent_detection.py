@@ -13,6 +13,8 @@ dict_of_intents = {
     "get_project_activities": "Hỏi về các hoạt động (activity) của dự án",
     "get_project_issues": "Hỏi về các vấn đề (issue) của dự án",
     "get_project_risks": "Hỏi về các rủi ro (risk) của dự án",
+    "get_solved_issues": "Hỏi về các vấn đề đã được giải quyết của dự án",
+    "get_bot_info": "Hỏi về các intent có thể hỗ trợ",
     "other": "Các câu hỏi khác không nằm trong các intent trên"
 }
 dict_of_entities = {
@@ -41,9 +43,6 @@ bot_prompt = create_bot_prompt()
 
 
 class IntentDetector:
-    def __init__(self):
-        pass
-
     def detect(self, user_input):
         user_prompt = f"Câu hỏi: {user_input}"
         response = openai.ChatCompletion.create(
@@ -60,5 +59,4 @@ class IntentDetector:
         if "entities" in result:
             entities = result["entities"]
         return intents, entities
-
 

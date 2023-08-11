@@ -20,25 +20,25 @@ class ProjectDAO:
 
     def get_all_project_stage(self):
         sql = (
-            f"SELECT stage FROM {config.SCHEMA}.projects;"
+            f"SELECT stage, name as project_name FROM {config.SCHEMA}.projects;"
         )
         self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
         result = self.cursor.fetchall()
-        result = list(map(lambda x: x[0], result))
         return {
-            'columns': ['stage'],
+            'columns': columns,
             'result': result
         }
 
     def get_stage_of_project(self, project_name):
         sql = (
-            f"SELECT stage FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"
+            f"SELECT stage, name AS project_name FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"
         )
         self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
         result = self.cursor.fetchall()
-        result = list(map(lambda x: x[0], result))
         return {
-            'columns': ['stage'],
+            'columns': columns,
             'result': result
         }
 
@@ -68,25 +68,27 @@ class MilestoneDAO:
             f"SELECT \"milestoneDate\", subject, status, description FROM {config.SCHEMA}.milestones;"
         )
         self.cursor.execute(sql)
-        columns = [desc[0] for desc in self.cursor.description]
+        columns = [desc[0] for desc in self.cursor.descriptions]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
         }
 
     def get_all_milestones_of_project(self, project_name):
         print(project_name)
         sql = (
-            f"SELECT m.\"milestoneDate\", subject, status, description, p.name "
+            f"SELECT m.\"milestoneDate\", subject, status, description, p.name as project_name "
             f"FROM {config.SCHEMA}.milestones AS m, {config.SCHEMA}.projects AS p "
             f"WHERE m.\"projectId\" = p.id "
             f"  AND LOWER(P.name) like '{project_name.lower()}';"
         )
         self.cursor.execute(sql)
         columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
         }
 
 
@@ -97,17 +99,29 @@ class IssueDAO:
 
     def get_all_issues(self):
         sql = (
-            f"SELECT i.*, p.name "
+            f"SELECT "
+            f"  i.\"dueDate\", "
+            f"  i.\"startDate\", "
+            f"  i.subject, "
+            f"  i.description, "
+            f"  i.\"rootCause\", "
+            f"  i.\"correctiveAction\", "
+            f"  i.\"preventiveAction\", "
+            f"  i.\"criticalLevel\", "
+            f"  i.status, "
+            f"  p.name as project_name "
             f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
             f"WHERE i.\"projectId\" = p.id "
             f"  AND i.type = 'Issues' "
+            f"  AND (i.status = 'Open' OR i.status = 'Solving') "
             f"  AND (i.\"updatedAt\" >= NOW() - INTERVAL '1 month') "
         )
         self.cursor.execute(sql)
         columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
         }
 
     def get_all_issues_of_project(self, project_name):
@@ -122,7 +136,7 @@ class IssueDAO:
             f"  i.\"preventiveAction\", "
             f"  i.\"criticalLevel\", "
             f"  i.status, "
-            f"  p.name "
+            f"  p.name as project_name "
             f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
             f"WHERE i.\"projectId\" = p.id "
             f"  AND i.type = 'Issues' "
@@ -131,9 +145,65 @@ class IssueDAO:
         )
         self.cursor.execute(sql)
         columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
+        }
+
+    def get_all_solved_issues(self):
+        sql = (
+            f"SELECT "
+            f"  i.\"dueDate\", "
+            f"  i.\"startDate\", "
+            f"  i.subject, "
+            f"  i.description, "
+            f"  i.\"rootCause\", "
+            f"  i.\"correctiveAction\", "
+            f"  i.\"preventiveAction\", "
+            f"  i.\"criticalLevel\", "
+            f"  i.status, "
+            f"  p.name as project_name "
+            f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
+            f"WHERE i.\"projectId\" = p.id "
+            f"  AND i.type = 'Issues' "
+            f"  AND (i.status = 'Closed' OR i.status = 'Solved') "
+            f"  AND (i.\"updatedAt\" >= NOW() - INTERVAL '2 month') "
+        )
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
+        return {
+            'columns': columns,
+            'result': result
+        }
+
+    def get_solved_issues_of_project(self, project_name):
+        sql = (
+            f"SELECT "
+            f"  i.\"dueDate\", "
+            f"  i.\"startDate\", "
+            f"  i.subject, "
+            f"  i.description, "
+            f"  i.\"rootCause\", "
+            f"  i.\"correctiveAction\", "
+            f"  i.\"preventiveAction\", "
+            f"  i.\"criticalLevel\", "
+            f"  i.status, "
+            f"  p.name as project_name "
+            f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
+            f"WHERE i.\"projectId\" = p.id "
+            f"  AND i.type = 'Issues' "
+            f"  AND (i.status = 'Closed' OR i.status = 'Solved') "
+            f"  AND (i.\"updatedAt\" >= NOW() - INTERVAL '1 month') "
+            f"  AND LOWER(p.name) like '{project_name.lower()}';"
+        )
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
+        return {
+            'columns': columns,
+            'result': result
         }
 
 
@@ -144,18 +214,28 @@ class RiskDAO:
 
     def get_all_risks(self):
         sql = (
-            f"SELECT i.*, p.name "
+            f"SELECT "
+            f"  i.\"dueDate\", "
+            f"  i.\"startDate\", "
+            f"  i.subject, "
+            f"  i.description, "
+            f"  i.\"rootCause\", "
+            f"  i.\"correctiveAction\", "
+            f"  i.\"preventiveAction\", "
+            f"  i.\"criticalLevel\", "
+            f"  i.status, "
+            f"  p.name as project_name "
             f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
             f"WHERE i.\"projectId\" = p.id "
             f"  AND i.type = 'Risks' "
             f"  AND (i.\"updatedAt\" >= NOW() - INTERVAL '1 month') "
         )
-        print(sql)
         self.cursor.execute(sql)
         columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
         }
 
     def get_all_risks_of_project(self, project_name):
@@ -171,7 +251,7 @@ class RiskDAO:
             f"  i.\"preventiveAction\", "
             f"  i.\"criticalLevel\", "
             f"  i.status, "
-            f"  p.name "
+            f"  p.name as project_name "
             f"FROM {config.SCHEMA}.issues AS i, {config.SCHEMA}.projects AS p "
             f"WHERE i.\"projectId\" = p.id "
             f"  AND i.type = 'Risks' "
@@ -180,9 +260,47 @@ class RiskDAO:
         )
         self.cursor.execute(sql)
         columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
         return {
             'columns': columns,
-            'result': self.cursor.fetchall()
+            'result': result
+        }
+
+
+class ActivityDAO:
+    def __init__(self, conn: connection):
+        self.conn = conn
+        self.cursor = conn.cursor()
+
+    def get_all_activities(self):
+        sql = (
+            f"SELECT p.name as project_name, a.current_status, a.next_plan, a.\"updatedAt\"  "
+            f"FROM {config.SCHEMA}.activities AS a, {config.SCHEMA}.projects AS p "
+            f"WHERE a.\"projectId\" = p.id "
+            f"  AND (a.\"updatedAt\" >= NOW() - INTERVAL '2 week') "
+        )
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
+        return {
+            'columns': columns,
+            'result': result
+        }
+
+    def get_all_activities_of_project(self, project_name):
+        sql = (
+            f"SELECT p.name as project_name, a.current_status, a.next_plan, a.\"updatedAt\" "
+            f"FROM {config.SCHEMA}.activities AS a, {config.SCHEMA}.projects AS p "
+            f"WHERE a.\"projectId\" = p.id "
+            f"  AND (a.\"updatedAt\" >= NOW() - INTERVAL '2 week') "
+            f"  AND LOWER(p.name) like '{project_name.lower()}';"
+        )
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
+        return {
+            'columns': columns,
+            'result': result
         }
 
 
