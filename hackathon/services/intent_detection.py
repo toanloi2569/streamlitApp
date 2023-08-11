@@ -3,6 +3,7 @@
 import openai
 import json
 from config import config
+from config.constance import project_stages
 
 
 openai.api_key = config.OPENAI_API_KEY
@@ -21,6 +22,7 @@ dict_of_entities = {
     "project_name": "Tên của dự án",
     "time": "Thời gian của dự án",
     "organization": "Tên của công ty hoặc tổ chức",
+    "stage": f"Trạng thái của dự án, thuộc các giá trị: {', '.join(project_stages)}",
 }
 
 answer_prompt = """Hãy đưa ra intent và entity trong câu hỏi của người dùng (trong câu hỏi sẽ có trường hợp có nhiều 

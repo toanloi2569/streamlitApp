@@ -30,6 +30,20 @@ class ProjectDAO:
             'result': result
         }
 
+    def get_all_project_with_stage(self, stage):
+        sql = (
+            f"SELECT name, stage FROM {config.SCHEMA}.projects "
+            f"WHERE LOWER(stage) = '{stage.lower()}';"
+        )
+        print(sql)
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        result = self.cursor.fetchall()
+        return {
+            'columns': columns,
+            'result': result
+        }
+
     def get_stage_of_project(self, project_name):
         sql = (
             f"SELECT stage, name AS project_name FROM {config.SCHEMA}.projects WHERE name = '{project_name}';"

@@ -3,6 +3,7 @@ from thefuzz import fuzz
 from dao.postgres_dao import stored_entities, IssueDAO, RiskDAO, ActivityDAO
 from dao.postgres_dao import ProjectDAO, MilestoneDAO
 from services.postgres_connector import postgres_conn
+from config.constance import project_stages
 
 
 class IntentFuncMapper:
@@ -27,6 +28,10 @@ def get_project_stages(entities: dict):
     entities = map_entities(entities)
     if 'project_name' in entities:
         project_stages = project_dao.get_stage_of_project(entities['project_name'])
+        return project_stages
+
+    if 'stage' in entities:
+        project_stages = project_dao.get_all_project_with_stage(entities['stage'])
         return project_stages
 
     project_stages = project_dao.get_all_project_stage()
@@ -128,6 +133,12 @@ def map_entities(entities):
         entities['organization'] = get_best_similarity_values(
             entities['organization'][0],
             stored_entities['organization']
+        )
+
+    if 'stage' in entities:
+        entities['stage'] = get_best_similarity_values(
+            entities['stage'][0],
+            project_stages
         )
 
     return entities

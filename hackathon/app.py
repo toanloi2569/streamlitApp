@@ -4,7 +4,7 @@ import openai
 import streamlit as st
 import tiktoken
 from openai import InvalidRequestError
-from ui.post_process import message_func, format_message
+# from ui.post_process import message_func, format_message
 
 from config import config
 from services.intent_detection import IntentDetector
@@ -27,10 +27,10 @@ INITIAL_MESSAGE = [
 def clean_text(html_text):
     # Sử dụng BeautifulSoup để phân tích văn bản HTML
     soup = BeautifulSoup(html_text, 'html.parser')
-    
+
     # Loại bỏ tất cả các HTML tag và giữ lại nội dung văn bản
     clean_text = soup.get_text()
-    
+
     return clean_text
 
 
@@ -46,27 +46,24 @@ def set_page_title_and_icon():
                 font-size:15px !important;
             }
         </style>
-        """, 
+        """,
         unsafe_allow_html=True)
 
     st.markdown('<p class="big-font">Carbon Assistant 💎</p>', unsafe_allow_html=True)
 
 
-def clean_text(html_text):
-    # Sử dụng BeautifulSoup để phân tích văn bản HTML
-    soup = BeautifulSoup(html_text, 'html.parser')
-    
-    # Loại bỏ tất cả các HTML tag và giữ lại nội dung văn bản
-    clean_text = soup.get_text()
-    
-    return clean_text
-
 def create_dataframe(table_data):
-    for cell in table_data['result']:
-        if isinstance(cell, str):
-            cell = clean_text(cell)
-    df = pd.DataFrame(table_data['result'], columns=table_data['columns'])
+    n_data = []
+    for row in table_data['result']:
+        n_row = []
+        for cell in row:
+            if isinstance(cell, str):
+                cell = clean_text(cell)
+            n_row.append(cell)
+        n_data.append(tuple(n_row))
+    df = pd.DataFrame(n_data, columns=table_data['columns'])
     return df
+
 
 def preprocess(user_prompt):
     nlg_prompt_template = """
@@ -92,7 +89,7 @@ def preprocess(user_prompt):
     intent_func_mapper = IntentFuncMapper()
 
     if len(intents) == 1 and intents[0] == 'other':
-        return user_prompt, None, None
+        return user_prompt, intents[0], None
 
     for intent in intents:
         func = intent_func_mapper.get_func(intent)
@@ -105,6 +102,8 @@ def preprocess(user_prompt):
         "entities": entities,
         "query_results": str(query_results)
     }, ensure_ascii=False)
+
+    print(query_results_enriched)
     processed_prompt = nlg_prompt_template.format(question=query_results_enriched)
     intent = intents[0]
     table_result = query_results[0]
@@ -118,8 +117,9 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
     return num_tokens
 
 
-# def create_dataFrame_from_table(table):
-#     df = 
+def format_message(text):
+    return text.replace('```', '')
+
 
 with open("ui/sidebar.md", "r") as sidebar_file:
     sidebar_content = sidebar_file.read()
